@@ -1,6 +1,7 @@
 <script lang="ts">
   import reports from '#lib/data/reports-4471.json';
   import notes from '#lib/data/desk-notes.json';
+  import eng from '#lib/data/engineering-4471.json';
   import type { Report } from '#lib/kb/causes';
   import { tenantOf } from '#lib/kb/locales';
   import { groupByProblem, PROBLEM_TITLE, type Problem } from '#lib/kb/problems';
@@ -9,6 +10,7 @@
   let { ticket, issues = {} }: { ticket: number; issues?: Partial<Record<Problem, { n: number; href: string }>> } = $props();
 
   const view = $derived(groupByProblem(reports as Report[], ticket, tenantOf, notes.oneDayMove));
+  const outcome = (p: Problem) => (eng.outcomes as Partial<Record<Problem, { status: string; note: string }>>)[p];
   const tags = (t: Record<string, number>) =>
     Object.entries(t).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ×${n}`).join(' · ');
 </script>
@@ -20,7 +22,7 @@
 </p>
 
 <table>
-  <thead><tr><th>problem</th><th>reports</th><th>tenants</th><th>seen</th><th>intake tagged</th><th>ticket</th></tr></thead>
+  <thead><tr><th>problem</th><th>reports</th><th>tenants</th><th>seen</th><th>intake tagged</th><th>ticket</th><th>engineering</th></tr></thead>
   <tbody>
     {#each view.groups as g (g.problem)}
       <tr>
@@ -30,6 +32,7 @@
         <td>{g.firstSeen} → {g.lastSeen}</td>
         <td class="tags">{tags(g.taggedAs)}</td>
         <td>{#if issues[g.problem]}<a href={issues[g.problem]?.href}>#{issues[g.problem]?.n}</a>{:else}none yet{/if}</td>
+        <td>{#if outcome(g.problem)}<strong>{outcome(g.problem)?.status}</strong><br /><span class="tags">{outcome(g.problem)?.note}</span>{:else}<strong class="open">no fix</strong>{/if}</td>
       </tr>
     {/each}
   </tbody>
@@ -45,5 +48,6 @@
 
 <style>
   .sum { font-size: 1.1rem; }
+  .open { color: var(--warn); }
   .tags { color: var(--muted); font-size: 0.85em; }
 </style>
