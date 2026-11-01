@@ -25,7 +25,7 @@
     {#each view.groups as g (g.problem)}
       <tr>
         <td><code>{g.problem}</code> {PROBLEM_TITLE[g.problem]}</td>
-        <td><strong>{g.reports.length}</strong></td>
+        <td><strong>{g.reports.length}</strong>{#each Object.entries(g.alsoIn) as [q, n] (q)}<br /><span class="tags">{n} also in <code>{q}</code></span>{/each}</td>
         <td>{g.tenants}</td>
         <td>{g.firstSeen} → {g.lastSeen}</td>
         <td class="tags">{tags(g.taggedAs)}</td>
@@ -33,10 +33,15 @@
       </tr>
     {/each}
   </tbody>
-  <tfoot>
-    <tr><td>total</td><td><strong>{view.groups.reduce((n, g) => n + g.reports.length, 0)}</strong></td><td colspan="4"></td></tr>
-  </tfoot>
 </table>
+
+{#each view.groups as g (g.problem)}
+  {#each Object.entries(g.alsoIn) as [q, n] (q)}
+    {#if g.problem === 'shift'}
+      <p class="tags">The {n} <code>shift</code> reports are the ones the desk read as a one-day move. They stay counted under <code>{q}</code>, where the desk filed them by tenant, and have their own ticket as well.</p>
+    {/if}
+  {/each}
+{/each}
 
 <style>
   .sum { font-size: 1.1rem; }
