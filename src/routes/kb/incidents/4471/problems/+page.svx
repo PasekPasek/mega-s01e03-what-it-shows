@@ -1,0 +1,62 @@
+---
+layout: runbook
+title: '#4471 holds three problems, not one'
+owner: Paweł Pasek
+status: proposed
+reviewed: 2026-11-01
+signature: v1.eyJzdWIiOiI5MzAiLCJhdWQiOiJjaGFsbGVuZ2U6d2hhdC1pdC1zaG93cyIsImlhdCI6MTc5MzQ5NDg3NCwiZXhwIjoxNzkzNTgxMjc0fQ.qGJsyJMivETjVnF2WnAIMEPpRKVhOmxR_hNJ6dErmOs
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+
+  const repo = 'https://github.com/PasekPasek/mega-s01e03-what-it-shows/issues';
+  const issues = {
+    parser: { n: 1, href: `${repo}/1` },
+    hint: { n: 2, href: `${repo}/2` },
+    shift: { n: 3, href: `${repo}/3` },
+  };
+</script>
+
+[#4471](/kb/incidents/4471) was merged as one issue because the reports share subject lines
+([decision 0001](/kb/decisions/0001-dedupe-by-subject)). Read by what the dates in them show,
+the reports split into three problems. Each one needs its own fix, so each now has its own ticket.
+
+<Callout kind="warn">
+Fixing the parser will not close #4471. The other two problems keep coming in after that fix ships.
+</Callout>
+
+## The problems
+
+<ProblemTable ticket={4471} {issues} />
+
+The counts come from the export at render time: one report per id, the cause from the tenant's
+locale and booking form (`causes.ts`), and the desk's own list of one-day moves (`desk-notes.json`).
+The intake tag is a guess from the reporter's browser; it is shown for comparison and decides nothing.
+
+### `parser`: day and month swap
+
+The shared parser reads every date month first. A day-first tenant's *7 April* arrives as *4 July*.
+It is the bug #4471 names, and it covers every channel of every tenant except booking-v3 forms.
+
+### `hint`: the booking-v3 form tells people to type month first
+
+booking-v3 prints `MM/DD/YYYY` under its date field. On day-first tenants that run it, people type
+what the hint says, and the form reads it the tenant's way. The swap looks the same, but the fix is in
+the form, not the parser. Fixing the parser alone leaves these reports coming in.
+
+### `shift`: the date moves by one day
+
+These reports are not a swap. *Tuesday 12 May* shows as *Monday 11 May*. A client in Lisbon gets Tuesday
+and one in Toronto gets Monday for the same meeting. An invite arrives before the booking is made.
+That points at time zone handling (a date stored as a moment, read in another zone), not at day order.
+The desk spotted these and filed them under `parser` by tenant. They need their own ticket.
+
+## What to change on the desk
+
+- Do not merge on subject alone. Three bugs share the same subject lines.
+- Count one report per id: the export repeats rows across pages.
+
+<RenderStamp {signature} />
